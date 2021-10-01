@@ -1,4 +1,20 @@
 import numpy as np
+from lux.game_map import GameMap
+
+# NOTE: this is not really working
+
+
+def game_map_to_array(game_map: GameMap):
+
+    h = game_map.height
+    w = game_map.width
+
+    array = np.zeros((game_map.height, game_map.width))
+
+    for y in range(h):
+        for x in range(w):
+            city_tile = game_map.get_cell(x, y).citytile
+            array[y][x] = city_tile is not None
 
 
 class Node:
