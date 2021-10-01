@@ -17,7 +17,7 @@ game_state = None
 
 unit_objectives = {}
 
-_MAX_CITIES = 2
+_DEFAULT_MAX_CITIES = 2
 
 
 class TurnManager:
@@ -40,6 +40,9 @@ class TurnManager:
         self._resource_tiles = None
         self._city_tiles = None
 
+        configuration = configuration or {}
+        self.max_cities = configuration.get("MAX_CITIES", _DEFAULT_MAX_CITIES)
+
     def play_turn(self):
         self.log("start")
         self.log("objectives: " + str(unit_objectives))
@@ -54,7 +57,7 @@ class TurnManager:
 
                 if (
                     objective_position is None
-                    and self.player.city_tile_count < _MAX_CITIES
+                    and self.player.city_tile_count < self.max_cities
                     and has_enough_resource(unit)
                 ):
                     # get new objective for the unit
