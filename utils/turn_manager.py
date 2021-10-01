@@ -6,15 +6,16 @@ from lux import annotate
 from lux.constants import Constants
 from lux.game import Game
 from lux.game_constants import GAME_CONSTANTS
-from lux.game_map import RESOURCE_TYPES, Cell
+from lux.game_map import RESOURCE_TYPES, Cell, Position
 from lux.game_objects import Player, Unit
 
-from utils.log import Logger
 from utils.map import get_adjacent_cells, get_closest_cell
 from utils.unit import has_enough_resource
 
 DIRECTIONS = Constants.DIRECTIONS
 game_state = None
+
+unit_objectives = {}
 
 _MAX_CITIES = 2
 
@@ -40,46 +41,43 @@ class TurnManager:
         self._city_tiles = None
 
     def play_turn(self):
+        self.log("start")
+        self.log("objectives: " + str(unit_objectives))
         actions = []
         # we iterate over all our units and do something with them
         for unit in self.player.units:
+
+            objective_position = self.get_objective(unit)
+            self.log("objective position: " + str(objective_position))
+
             if unit.is_worker() and unit.can_act():
 
-                # NOTE: this part is custom
-                if self.player.city_tile_count < _MAX_CITIES and has_enough_resource(
-                    unit
+                if (
+                    objective_position is None
+                    and self.player.city_tile_count < _MAX_CITIES
+                    and has_enough_resource(unit)
                 ):
+                    # get new objective for the unit
+                    possible_cells = get_adjacent_cells(game_state.map, unit.pos)
+                    closest_cell = get_closest_cell(
+                        game_state.map, unit, possible_cells
+                    )
+                    self.set_objective(unit, closest_cell.pos)
+                    objective_position = closest_cell.pos
+                    self.log("set objective " + str(closest_cell.pos))
 
-                    # get position to build
-                    if self.player.city_tile_count > 0:
-
-                        # TODO: fix how we get this position: it is wrong
-                        existing_city_pos = self.city_tiles[0].pos
-                        possible_cells = get_adjacent_cells(
-                            game_state.map, existing_city_pos
-                        )
-                        closest_cell = get_closest_cell(
-                            game_state.map, unit, possible_cells
-                        )
-
-                        self.log(str(closest_cell.pos) + " (city found)")
-
-                    else:
-                        possible_cells = get_adjacent_cells(game_state.map, unit.pos)
-                        closest_cell = get_closest_cell(
-                            game_state.map, unit, possible_cells
-                        )
-                        self.log(str(closest_cell.pos) + " (no city found)")
+                if objective_position is not None:
 
                     # build if possible
-                    if closest_cell.pos == unit.pos:
+                    if objective_position == unit.pos:
+                        self.log("Build city " + str(objective_position))
                         actions.append(unit.build_city())
+                        self.clear_objective(unit)
                     # or walk toward it
                     else:
-                        self.log("move to city " + str(closest_cell.pos))
-
+                        self.log("move to objective " + str(objective_position))
                         actions.append(
-                            unit.move(unit.pos.direction_to(closest_cell.pos))
+                            unit.move(unit.pos.direction_to(objective_position))
                         )
 
                 elif unit.get_cargo_space_left() > 0:
@@ -96,6 +94,7 @@ class TurnManager:
                     if len(self.player.cities) > 0:
                         closest_city_tile = self.get_closest_city_tile(unit)
                         if closest_city_tile is not None:
+                            self.log("go home " + str(closest_city_tile.pos))
                             move_dir = unit.pos.direction_to(closest_city_tile.pos)
                             actions.append(unit.move(move_dir))
 
@@ -168,7 +167,22 @@ class TurnManager:
                     res.append(cell)
         return res
 
+    def get_objective(self, unit: Unit) -> Position:
+        global unit_objectives
+        return unit_objectives.get(unit)
+
+    def clear_objective(self, unit: Unit) -> None:
+        global unit_objectives
+        del unit_objectives[unit]
+
+    def set_objective(self, unit: Unit, position: Position) -> None:
+        # global unit_objectives
+        unit_objectives[unit] = position
+
     def log(self, message: str):
+        if self.player.team != 0:
+            return
+
         with open("log.txt", "a") as f:
-            message = f"Team {self.player.team}: {message}\n"
+            message = f"[Turn {game_state.turn}]Team {self.player.team}: {message}\n"
             f.write(message)
