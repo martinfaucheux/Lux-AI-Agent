@@ -92,7 +92,10 @@ class TurnManager:
                 else:
                     # if unit is a worker and there is no cargo space left, and we have cities, lets return to them
                     if len(self.player.cities) > 0:
-                        closest_city_tile = self.get_closest_city_tile(unit)
+
+                        # closest_city_tile = self.get_closest_city_tile(unit)
+                        closest_city_tile = self.get_closest_poorest_city_tile(unit)
+
                         if closest_city_tile is not None:
                             self.log("go home " + str(closest_city_tile.pos))
                             move_dir = unit.pos.direction_to(closest_city_tile.pos)
@@ -133,6 +136,23 @@ class TurnManager:
                     closest_city_tile = city_tile
 
         return closest_city_tile
+
+    def get_poorest_city(self):
+        cities = sorted(list(self.player.cities.values()), key=lambda city: city.fuel)
+        return cities[0] if cities else None
+
+    def get_closest_poorest_city_tile(self, unit: Unit) -> Cell:
+        poorest_city = self.get_poorest_city()
+
+        if poorest_city is None:
+            return None
+
+        possible_cells = [
+            game_state.map.get_cell_by_pos(city_tile.pos)
+            for city_tile in poorest_city.citytiles
+        ]
+
+        return get_closest_cell(game_state.map, unit, possible_cells)
 
     @property
     def width(self) -> int:
