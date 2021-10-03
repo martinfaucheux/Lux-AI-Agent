@@ -25,7 +25,7 @@ class Constants:
             if y == 0:
                 if x == -1:
                     return cls.WEST
-                elif y == 1:
+                elif x == 1:
                     return cls.EAST
             return cls.CENTER
 

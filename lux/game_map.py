@@ -1,5 +1,7 @@
 import math
-from typing import List
+from typing import List, Optional
+
+from utils.path_finder import bfs, game_map_to_array
 
 from .constants import Constants
 
@@ -47,6 +49,22 @@ class GameMap:
         cell = self.get_cell(x, y)
         cell.resource = Resource(r_type, amount)
 
+    def get_path_direction(
+        self, start_pos: "Position", end_pos: "Position"
+    ) -> Optional[DIRECTIONS]:
+
+        matrix = game_map_to_array(self, start_pos, end_pos)
+        path = bfs(matrix, (start_pos.x, start_pos.y))
+
+        if path is None or len(path) < 2:
+            return None
+
+        x, y = path[1]
+        next_pos = Position(x, y)
+        disp = next_pos - start_pos
+        direction = DIRECTIONS.get_from_coord(disp.x, disp.y)
+        return direction
+
 
 class Position:
     def __init__(self, x, y):
@@ -60,7 +78,8 @@ class Position:
         """
         Returns Manhattan (L1/grid) distance to pos
         """
-        return self - pos
+        diff = self - pos
+        return math.sqrt(diff.x * diff.x + diff.y * diff.y)
 
     def is_adjacent(self, pos):
         return (self - pos) <= 1
@@ -108,4 +127,7 @@ class Position:
 
     # NOTE: custom
     def __add__(self, other):
-        return Position(self.x + other.x, self.y - other.y)
+        return Position(self.x + other.x, self.y + other.y)
+
+    def __sub__(self, other):
+        return Position(self.x - other.x, self.y - other.y)

@@ -17,7 +17,7 @@ game_state = None
 
 unit_objectives = {}
 
-_DEFAULT_MAX_CITIES = 2
+_DEFAULT_MAX_CITIES = 3
 
 
 class TurnManager:
@@ -44,14 +44,11 @@ class TurnManager:
         self.max_cities = configuration.get("MAX_CITIES", _DEFAULT_MAX_CITIES)
 
     def play_turn(self):
-        self.log("start")
-        self.log("objectives: " + str(unit_objectives))
         actions = []
         # we iterate over all our units and do something with them
         for unit in self.player.units:
 
             objective_position = self.get_objective(unit)
-            self.log("objective position: " + str(objective_position))
 
             if unit.is_worker() and unit.can_act():
 
@@ -67,21 +64,29 @@ class TurnManager:
                     )
                     self.set_objective(unit, closest_cell.pos)
                     objective_position = closest_cell.pos
-                    self.log("set objective " + str(closest_cell.pos))
 
                 if objective_position is not None:
 
+                    actions.append(
+                        annotate.circle(objective_position.x, objective_position.y)
+                    )
+
                     # build if possible
                     if objective_position == unit.pos:
-                        self.log("Build city " + str(objective_position))
                         actions.append(unit.build_city())
                         self.clear_objective(unit)
                     # or walk toward it
                     else:
-                        self.log("move to objective " + str(objective_position))
-                        actions.append(
-                            unit.move(unit.pos.direction_to(objective_position))
+                        # direction = unit.pos.direction_to(objective_position)
+
+                        direction = game_state.map.get_path_direction(
+                            unit.pos, objective_position
                         )
+
+                        self.log(direction)
+
+                        if direction is not None:
+                            actions.append(unit.move(direction))
 
                 elif unit.get_cargo_space_left() > 0:
 
@@ -100,7 +105,6 @@ class TurnManager:
                         closest_city_tile = self.get_closest_poorest_city_tile(unit)
 
                         if closest_city_tile is not None:
-                            self.log("go home " + str(closest_city_tile.pos))
                             move_dir = unit.pos.direction_to(closest_city_tile.pos)
                             actions.append(unit.move(move_dir))
 
