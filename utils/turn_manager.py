@@ -1,13 +1,11 @@
 import math
-import sys
 from typing import List, Optional
 
 from lux import annotate
 from lux.constants import Constants
 from lux.game import Game
-from lux.game_constants import GAME_CONSTANTS
-from lux.game_map import RESOURCE_TYPES, Cell, Position
-from lux.game_objects import Player, Unit
+from lux.game_map import Cell, Position
+from lux.game_objects import Unit
 
 from utils.map import get_adjacent_cells, get_closest_cell
 from utils.unit import has_enough_resource
