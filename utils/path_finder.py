@@ -10,6 +10,7 @@ START = 1
 END = 2
 EMPTY = 3
 
+
 def game_map_to_array(game_map, startPos, endPos) -> np.array:
     """Convert GameMap to an int array"""
     h = game_map.height
@@ -42,9 +43,6 @@ def get_start_pos(grid):
 
 
 def bfs(grid, start):
-
-    # i, j = get_start_pos()
-
     height = len(grid)
     width = len(grid[0])
     queue = collections.deque([[start]])
@@ -64,5 +62,3 @@ def bfs(grid, start):
             ):
                 queue.append(path + [(x2, y2)])
                 seen.add((x2, y2))
-
-
