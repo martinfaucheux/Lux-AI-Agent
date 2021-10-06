@@ -1,5 +1,5 @@
 import math
-from typing import List, Optional
+from typing import List, Optional, Tuple, Union
 
 from utils.path_finder import bfs, game_map_to_array
 
@@ -78,6 +78,15 @@ class GameMap:
                     pos_list.append(check_pos)
         return pos_list
 
+    def __getitem__(self, key: Union["Position", Tuple[int, int]]) -> Cell:
+        if type(key) is Position:
+            return self.get_cell_by_pos(key)
+
+        if isinstance(key, tuple) and list(map(type, key)) == [int, int]:
+            return self.get_cell(key[0], key[1])
+
+        raise ValueError("key must be of type Position or Tuple(int, int)")
+
 
 class Position:
     def __init__(self, x, y):
@@ -138,9 +147,11 @@ class Position:
     def __str__(self) -> str:
         return f"({self.x}, {self.y})"
 
-    # NOTE: custom
     def __add__(self, other):
         return Position(self.x + other.x, self.y + other.y)
 
     def __sub__(self, other):
         return Position(self.x - other.x, self.y - other.y)
+
+    def __hash__(self):
+        return hash((self.x, self.y))

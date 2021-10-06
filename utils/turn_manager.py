@@ -57,8 +57,7 @@ class TurnManager:
                     and has_enough_resource(unit)
                 ):
                     # get new objective for the unit
-                    possible_cells = get_adjacent_cells(game_state.map, unit.pos)
-                    closest_cell = get_closest_cell(unit, possible_cells)
+                    closest_cell = self.get_next_city_cell(unit.pos)
                     self.set_objective(unit, closest_cell.pos)
                     objective_position = closest_cell.pos
 
@@ -158,20 +157,20 @@ class TurnManager:
 
         return get_closest_cell(unit, possible_cells)
 
-    def get_next_city_cell(self, unit_cell: Cell) -> Optional[Cell]:
-        possible_cells: Set[Cell] = {}
+    def get_next_city_cell(self, pos: Position) -> Optional[Cell]:
+
+        possible_cells: Set[Cell] = set()
         for cell in self.city_tiles:
             pos_list = self.map.get_plus_neighbors(cell.pos)
             for pos in pos_list:
-                possible_cells.add(pos)
+                possible_cells.add(self.map[pos])
 
         if possible_cells:
-            return get_closest_cell(unit_cell, possible_cells)
+            return get_closest_cell(pos, possible_cells)
 
         # if no possible cell, return first ad
         possible_cells = [
-            self.map.get_cell_by_pos(pos)
-            for pos in self.map.get_plus_neighbors(unit_cell.pos)
+            self.map.get_cell_by_pos(pos) for pos in self.map.get_plus_neighbors(pos)
         ]
 
         if possible_cells:
