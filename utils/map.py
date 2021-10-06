@@ -1,31 +1,8 @@
 import math
 from typing import List, Optional, Set, Union
 
-from lux.game_map import Cell, GameMap, Position
+from lux.game_map import Cell, Position
 from lux.game_objects import Unit
-
-
-def get_adjacent_cells(
-    game_map: GameMap,
-    position: Position,
-    allow_city: bool = False,
-    allow_resource: bool = False,
-):
-    cells: List[Cell] = []
-    for x in range(-1, 2):
-        for y in range(-1, 2):
-            if x == 0 and y == 0:
-                continue
-            test_position = position + Position(x, y)
-            if game_map.is_valid_position(test_position):
-                cell = game_map.get_cell_by_pos(test_position)
-                if cell.citytile and not allow_city:
-                    continue
-                if cell.resource and not allow_resource:
-                    continue
-                cells.append(cell)
-
-    return cells
 
 
 def get_closest_cell(

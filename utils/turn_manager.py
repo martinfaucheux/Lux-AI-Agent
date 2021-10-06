@@ -7,7 +7,7 @@ from lux.game import Game
 from lux.game_map import Cell, GameMap, Position
 from lux.game_objects import Unit
 
-from utils.map import get_adjacent_cells, get_closest_cell
+from utils.map import get_closest_cell
 from utils.unit import has_enough_resource
 
 DIRECTIONS = Constants.DIRECTIONS
