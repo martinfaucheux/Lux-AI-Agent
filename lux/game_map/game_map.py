@@ -36,10 +36,10 @@ class GameMap:
 
     def get_path_direction(
         self,
-        start_pos: "Position",
-        end_pos: "Position",
+        start_pos: Position,
+        end_pos: Position,
         allow_player_cities: bool = False,
-        unit_positions: Optional[List["Position"]] = None,
+        unit_positions: Optional[List[Position]] = None,
     ) -> Optional[DIRECTIONS]:
 
         # TODO: add options to allow player cities
@@ -58,10 +58,10 @@ class GameMap:
         direction = DIRECTIONS.get_from_coord(disp.x, disp.y)
         return direction
 
-    def is_valid_position(self, pos: "Position") -> bool:
+    def is_valid_position(self, pos: Position) -> bool:
         return 0 <= pos.x < self.width and 0 <= pos.y < self.height
 
-    def get_plus_neighbors(self, pos: "Position") -> List["Position"]:
+    def get_plus_neighbors(self, pos: Position) -> List[Position]:
         pos_list: List[Position] = []
         for x, y in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
             check_pos = pos + Position(x, y)
@@ -71,7 +71,7 @@ class GameMap:
                     pos_list.append(check_pos)
         return pos_list
 
-    def __getitem__(self, key: Union["Position", Tuple[int, int]]) -> Cell:
+    def __getitem__(self, key: Union[Position, Tuple[int, int]]) -> Cell:
         if type(key) is Position:
             return self.get_cell_by_pos(key)
 
