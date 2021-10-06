@@ -1,10 +1,10 @@
 import math
-from typing import List, Optional
+from typing import List, Optional, Set
 
 from lux import annotate
 from lux.constants import Constants
 from lux.game import Game
-from lux.game_map import Cell, Position
+from lux.game_map import Cell, GameMap, Position
 from lux.game_objects import Unit
 
 from utils.map import get_adjacent_cells, get_closest_cell
@@ -40,6 +40,7 @@ class TurnManager:
 
         configuration = configuration or {}
         self.max_cities = configuration.get("MAX_CITIES", _DEFAULT_MAX_CITIES)
+        self.max_units = configuration.get("MAX_UNITS", _DEFAULT_MAX_CITIES)
 
     def play_turn(self):
         actions = []
@@ -57,9 +58,7 @@ class TurnManager:
                 ):
                     # get new objective for the unit
                     possible_cells = get_adjacent_cells(game_state.map, unit.pos)
-                    closest_cell = get_closest_cell(
-                        game_state.map, unit, possible_cells
-                    )
+                    closest_cell = get_closest_cell(unit, possible_cells)
                     self.set_objective(unit, closest_cell.pos)
                     objective_position = closest_cell.pos
 
@@ -157,7 +156,32 @@ class TurnManager:
             for city_tile in poorest_city.citytiles
         ]
 
-        return get_closest_cell(game_state.map, unit, possible_cells)
+        return get_closest_cell(unit, possible_cells)
+
+    def get_next_city_cell(self, unit_cell: Cell) -> Optional[Cell]:
+        possible_cells: Set[Cell] = {}
+        for cell in self.city_tiles:
+            pos_list = self.map.get_plus_neighbors(cell.pos)
+            for pos in pos_list:
+                possible_cells.add(pos)
+
+        if possible_cells:
+            return get_closest_cell(unit_cell, possible_cells)
+
+        # if no possible cell, return first ad
+        possible_cells = [
+            self.map.get_cell_by_pos(pos)
+            for pos in self.map.get_plus_neighbors(unit_cell.pos)
+        ]
+
+        if possible_cells:
+            return possible_cells[0]
+
+        return None
+
+    @property
+    def map(self) -> GameMap:
+        return game_state.map
 
     @property
     def width(self) -> int:

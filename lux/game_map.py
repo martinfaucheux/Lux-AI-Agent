@@ -65,6 +65,19 @@ class GameMap:
         direction = DIRECTIONS.get_from_coord(disp.x, disp.y)
         return direction
 
+    def is_valid_position(self, pos: "Position") -> bool:
+        return 0 <= pos.x < self.width and 0 <= pos.y < self.height
+
+    def get_plus_neighbors(self, pos: "Position") -> List["Position"]:
+        pos_list: List[Position] = []
+        for x, y in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+            check_pos = pos + Position(x, y)
+            if self.is_valid_position(check_pos):
+                cell: Cell = self.get_cell_by_pos(check_pos)
+                if not cell.has_resource() and cell.citytile is None:
+                    pos_list.append(check_pos)
+        return pos_list
+
 
 class Position:
     def __init__(self, x, y):
