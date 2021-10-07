@@ -1,5 +1,5 @@
 import math
-from typing import List, Optional, Set
+from typing import Dict, List, Optional, Set
 
 from lux import annotate
 from lux.constants import Constants
@@ -8,7 +8,6 @@ from lux.game_map import Cell, GameMap, Position
 from lux.game_objects import Unit
 
 from utils.map import get_closest_cell
-from utils.unit import has_enough_resource
 
 DIRECTIONS = Constants.DIRECTIONS
 game_state = None
@@ -58,14 +57,18 @@ class TurnManager:
                 if (
                     objective_position is None
                     and self.citytile_count_forcast < self.max_cities
-                    and has_enough_resource(unit)
+                    and unit.has_enough_resource()
                 ):
                     # get new objective for the unit
                     closest_cell = self.get_next_city_cell(unit.pos)
                     self.set_objective(unit, closest_cell.pos)
                     objective_position = closest_cell.pos
 
-                if objective_position is not None:
+                if (
+                    objective_position is not None
+                    and self.citytile_count_forcast < self.max_cities
+                    and unit.has_enough_resource()
+                ):
                     # signal that this unit will build
                     self.citytile_count_forcast += 1
 

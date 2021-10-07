@@ -161,6 +161,15 @@ class Unit:
         """
         return "p {}".format(self.id)
 
+    def has_enough_resource(self) -> bool:
+        if self.is_cart():
+            return False
+        return (
+            self.cargo.wood >= 100
+            or self.cargo.coal >= 100
+            or self.cargo.uranium >= 100
+        )
+
     def __hash__(self):
         return hash(self.id)
 
