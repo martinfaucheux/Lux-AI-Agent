@@ -201,12 +201,18 @@ class TurnManager:
     ):
         actions = []
         allowed_teams = [self.player.team] if allow_own_city else []
-        # TODO: remove units on cities if cities are accepted
+
+        unit_positions = [
+            pos
+            for pos in list(self.future_unit_pos.values())
+            if not self.map[pos].citytile
+        ]
+
         direction = game_state.map.get_path_direction(
             unit.pos,
             target_pos,
             allowed_city_teams=allowed_teams,
-            unit_positions=list(self.future_unit_pos.values()),
+            unit_positions=unit_positions,
         )
         actions.append(unit.move(direction))
         self.future_unit_pos[unit] = unit.pos.translate(direction)
