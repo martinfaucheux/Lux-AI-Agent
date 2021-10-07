@@ -3,7 +3,7 @@ from typing import Dict
 
 from agent import agent
 
-_CONFIG = {"MAX_CITIES": 2, "MAX_UNITS": 1}
+_CONFIG = {"MAX_CITIES": 2, "MAX_UNITS": 2}
 
 if __name__ == "__main__":
 

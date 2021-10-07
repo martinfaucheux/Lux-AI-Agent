@@ -45,6 +45,10 @@ class TurnManager:
         self.unit_count_forcast = len(self.player.units)
         self.citytile_count_forcast = self.player.city_tile_count
 
+        self.future_unit_pos: Dict[Unit, Position] = {
+            unit: unit.pos for unit in self.player.units
+        }
+
     def play_turn(self):
         actions = []
         # we iterate over all our units and do something with them
@@ -82,14 +86,7 @@ class TurnManager:
                         self.clear_objective(unit)
                     # or walk toward it
                     else:
-                        direction = game_state.map.get_path_direction(
-                            unit.pos, objective_position
-                        )
-
-                        self.log(direction)
-
-                        if direction is not None:
-                            actions.append(unit.move(direction))
+                        actions += self.get_path_direction(unit, objective_position)
 
                 elif unit.get_cargo_space_left() > 0:
 
@@ -97,15 +94,9 @@ class TurnManager:
                     closest_resource_tile = self.get_closest_resource_tile(unit)
 
                     if closest_resource_tile is not None:
-
-                        direction = game_state.map.get_path_direction(
-                            unit.pos,
-                            closest_resource_tile.pos,
-                            allowed_city_teams=[self.player.team],
+                        actions += self.get_path_direction(
+                            unit, closest_resource_tile.pos
                         )
-
-                        # direction = unit.pos.direction_to()
-                        actions.append(unit.move(direction))
                 else:
                     # if unit is a worker and there is no cargo space left, and we have cities, lets return to them
                     if len(self.player.cities) > 0:
@@ -114,8 +105,9 @@ class TurnManager:
                         closest_city_tile = self.get_closest_poorest_city_tile(unit)
 
                         if closest_city_tile is not None:
-                            move_dir = unit.pos.direction_to(closest_city_tile.pos)
-                            actions.append(unit.move(move_dir))
+                            actions += self.get_path_direction(
+                                unit, closest_city_tile.pos
+                            )
 
         for _, city in self.player.cities.items():
             for city_tile in city.citytiles:
@@ -125,13 +117,14 @@ class TurnManager:
                         and self.unit_count_forcast < self.max_units
                     ):
                         actions.append(city_tile.build_worker())
-                        self.citytile_count_forcast += 1
+                        self.unit_count_forcast += 1
+                    # TODO: else research
         return actions
 
     def get_closest_resource_tile(self, unit: Unit) -> Optional[Cell]:
-        # TODO: use get_closest_cell instead
         closest_dist = math.inf
         for resource_tile in self.resource_tiles:
+            pos = resource_tile.pos
             if (
                 resource_tile.resource.type == Constants.RESOURCE_TYPES.COAL
                 and not self.player.researched_coal()
@@ -142,6 +135,9 @@ class TurnManager:
                 and not self.player.researched_uranium()
             ):
                 continue
+            if pos != unit.pos and pos in list(self.future_unit_pos.values()):
+                continue
+
             dist = resource_tile.pos.distance_to(unit.pos)
             if dist < closest_dist:
                 closest_dist = dist
@@ -199,6 +195,22 @@ class TurnManager:
             return possible_cells[0]
 
         return None
+
+    def get_path_direction(
+        self, unit: Unit, target_pos: Position, allow_own_city: bool = False
+    ):
+        actions = []
+        allowed_teams = [self.player.team] if allow_own_city else []
+        # TODO: remove units on cities if cities are accepted
+        direction = game_state.map.get_path_direction(
+            unit.pos,
+            target_pos,
+            allowed_city_teams=allowed_teams,
+            unit_positions=list(self.future_unit_pos.values()),
+        )
+        actions.append(unit.move(direction))
+        self.future_unit_pos[unit] = unit.pos.translate(direction)
+        return actions
 
     @property
     def map(self) -> GameMap:
