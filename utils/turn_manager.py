@@ -16,6 +16,7 @@ game_state = None
 unit_objectives = {}
 
 _DEFAULT_MAX_CITIES = 3
+_DEFAULT_MAX_UNITS = 2
 
 
 class TurnManager:
@@ -40,7 +41,10 @@ class TurnManager:
 
         configuration = configuration or {}
         self.max_cities = configuration.get("MAX_CITIES", _DEFAULT_MAX_CITIES)
-        self.max_units = configuration.get("MAX_UNITS", _DEFAULT_MAX_CITIES)
+        self.max_units = configuration.get("MAX_UNITS", _DEFAULT_MAX_UNITS)
+
+        self.unit_count_forcast = len(self.player.units)
+        self.citytile_count_forcast = self.player.city_tile_count
 
     def play_turn(self):
         actions = []
@@ -53,7 +57,7 @@ class TurnManager:
 
                 if (
                     objective_position is None
-                    and self.player.city_tile_count < self.max_cities
+                    and self.citytile_count_forcast < self.max_cities
                     and has_enough_resource(unit)
                 ):
                     # get new objective for the unit
@@ -62,6 +66,8 @@ class TurnManager:
                     objective_position = closest_cell.pos
 
                 if objective_position is not None:
+                    # signal that this unit will build
+                    self.citytile_count_forcast += 1
 
                     actions.append(
                         annotate.circle(objective_position.x, objective_position.y)
@@ -73,8 +79,6 @@ class TurnManager:
                         self.clear_objective(unit)
                     # or walk toward it
                     else:
-                        # direction = unit.pos.direction_to(objective_position)
-
                         direction = game_state.map.get_path_direction(
                             unit.pos, objective_position
                         )
@@ -90,9 +94,15 @@ class TurnManager:
                     closest_resource_tile = self.get_closest_resource_tile(unit)
 
                     if closest_resource_tile is not None:
-                        actions.append(
-                            unit.move(unit.pos.direction_to(closest_resource_tile.pos))
+
+                        direction = game_state.map.get_path_direction(
+                            unit.pos,
+                            closest_resource_tile.pos,
+                            allowed_city_teams=[self.player.team],
                         )
+
+                        # direction = unit.pos.direction_to()
+                        actions.append(unit.move(direction))
                 else:
                     # if unit is a worker and there is no cargo space left, and we have cities, lets return to them
                     if len(self.player.cities) > 0:
@@ -104,6 +114,15 @@ class TurnManager:
                             move_dir = unit.pos.direction_to(closest_city_tile.pos)
                             actions.append(unit.move(move_dir))
 
+        for _, city in self.player.cities.items():
+            for city_tile in city.citytiles:
+                if city_tile.cooldown < 1:
+                    if (
+                        self.player.city_tile_count > len(self.player.units)
+                        and self.unit_count_forcast < self.max_units
+                    ):
+                        actions.append(city_tile.build_worker())
+                        self.citytile_count_forcast += 1
         return actions
 
     def get_closest_resource_tile(self, unit: Unit) -> Optional[Cell]:

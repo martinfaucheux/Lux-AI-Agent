@@ -11,17 +11,13 @@ END = 2
 EMPTY = 3
 
 
-def game_map_to_array(game_map, startPos, endPos) -> np.array:
+def game_map_to_array(game_map, startPos, endPos, forbidden_pos=None) -> np.array:
     """Convert GameMap to an int array"""
-    h = game_map.height
-    w = game_map.width
+    forbidden_pos = forbidden_pos or []
+    array = EMPTY * np.ones((game_map.height, game_map.width))
 
-    array = np.zeros((game_map.height, game_map.width))
-
-    for y in range(h):
-        for x in range(w):
-            city_tile = game_map.get_cell(x, y).citytile
-            array[y][x] = EMPTY if city_tile is None else WALL
+    for pos in forbidden_pos:
+        array[pos.y][pos.x] = WALL
 
     array[startPos.y][startPos.x] = START
     array[endPos.y][endPos.x] = END

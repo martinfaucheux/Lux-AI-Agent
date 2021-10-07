@@ -1,5 +1,5 @@
 import math
-from typing import Dict, List, Optional, Tuple, Union
+from typing import List, Optional, Set, Tuple, Union
 
 from utils.path_finder import bfs, game_map_to_array
 
@@ -21,10 +21,10 @@ class GameMap:
             for x in range(0, self.width):
                 self.map[y][x] = Cell(x, y)
 
-    def get_cell_by_pos(self, pos) -> Cell:
+    def get_cell_by_pos(self, pos: Position) -> Cell:
         return self.map[pos.y][pos.x]
 
-    def get_cell(self, x, y) -> Cell:
+    def get_cell(self, x: int, y: int) -> Cell:
         return self.map[y][x]
 
     def _setResource(self, r_type, x, y, amount):
@@ -38,19 +38,25 @@ class GameMap:
         self,
         start_pos: Position,
         end_pos: Position,
-        allow_player_cities: bool = False,
+        allowed_city_teams: Optional[List[int]] = None,
         unit_positions: Optional[List[Position]] = None,
     ) -> Optional[DIRECTIONS]:
 
-        # TODO: add options to allow player cities
-        # TODO: make sure oponent's cities are always masked
-        # TODO: make sure to mask future positions of units
+        allowed_city_teams: List[int] = allowed_city_teams or []
+        forbidden_pos: Set[Position] = set()
 
-        matrix = game_map_to_array(self, start_pos, end_pos)
+        if unit_positions:
+            forbidden_pos = set(unit_positions)
+
+        for cell in self:
+            if cell.citytile and cell.citytile.team not in allowed_city_teams:
+                forbidden_pos.add(cell.pos)
+
+        matrix = game_map_to_array(self, start_pos, end_pos, forbidden_pos)
         path = bfs(matrix, (start_pos.x, start_pos.y))
 
         if path is None or len(path) < 2:
-            return None
+            return DIRECTIONS.CENTER
 
         x, y = path[1]
         next_pos = Position(x, y)
@@ -58,8 +64,9 @@ class GameMap:
         direction = DIRECTIONS.get_from_coord(disp.x, disp.y)
         return direction
 
-    def is_valid_position(self, pos: Position) -> bool:
-        return 0 <= pos.x < self.width and 0 <= pos.y < self.height
+    def is_valid_position(self, obj: Union[Position, Tuple[int, int]]) -> bool:
+        x, y = self.get_tuple(obj)
+        return 0 <= x < self.width and 0 <= y < self.height
 
     def get_plus_neighbors(self, pos: Position) -> List[Position]:
         pos_list: List[Position] = []
@@ -72,10 +79,39 @@ class GameMap:
         return pos_list
 
     def __getitem__(self, key: Union[Position, Tuple[int, int]]) -> Cell:
-        if type(key) is Position:
-            return self.get_cell_by_pos(key)
+        x, y = self.get_tuple(key)
+        return self.get_cell(x, y)
 
-        if isinstance(key, tuple) and list(map(type, key)) == [int, int]:
-            return self.get_cell(key[0], key[1])
+    def __iter__(self) -> "GameMapIterator":
+        return GameMapIterator(self)
+
+    @staticmethod
+    def get_tuple(obj: Union[Position, Tuple[int, int]]):
+        if type(obj) is Position:
+            return (obj.x, obj.y)
+
+        if isinstance(obj, tuple) and list(map(type, obj)) == [int, int]:
+            return obj
 
         raise ValueError("key must be of type Position or Tuple(int, int)")
+
+
+class GameMapIterator(object):
+    def __init__(self, game_map: GameMap):
+        self.game_map = game_map
+        self._x: int = 0
+        self._y: int = 0
+
+    def __next__(self) -> Cell:
+        x, y = self._x, self._y
+        if self.game_map.is_valid_position((x, y)):
+            self.incr()
+            return self.game_map[(x, y)]
+        raise StopIteration
+
+    def incr(self):
+        if self._x == self.game_map.width - 1:
+            self._x = 0
+            self._y += 1
+        else:
+            self._x += 1
