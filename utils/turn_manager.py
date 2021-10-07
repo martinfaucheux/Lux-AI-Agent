@@ -238,15 +238,12 @@ class TurnManager:
         return res
 
     def get_objective(self, unit: Unit) -> Position:
-        global unit_objectives
         return unit_objectives.get(unit)
 
     def clear_objective(self, unit: Unit) -> None:
-        global unit_objectives
         del unit_objectives[unit]
 
     def set_objective(self, unit: Unit, position: Position) -> None:
-        # global unit_objectives
         unit_objectives[unit] = position
 
     def log(self, message: str):
