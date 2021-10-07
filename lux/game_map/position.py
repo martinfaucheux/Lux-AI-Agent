@@ -34,7 +34,7 @@ class Position:
     def equals(self, pos):
         return self == pos
 
-    def translate(self, direction, units) -> "Position":
+    def translate(self, direction, units=1) -> "Position":
         if direction == DIRECTIONS.NORTH:
             return Position(self.x, self.y - units)
         elif direction == DIRECTIONS.EAST:
